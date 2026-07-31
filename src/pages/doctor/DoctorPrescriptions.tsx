@@ -1,0 +1,150 @@
+import { useEffect, useState } from 'react';
+import { Plus, Trash2, X, Pill, Search } from 'lucide-react';
+import { useAuth } from '../../lib/auth';
+import { supabase } from '../../lib/supabase';
+import { fetchDoctorByUser, fetchPatients, fetchPrescriptionsByPatient } from '../../lib/queries';
+import { Spinner, EmptyState, formatDate } from '../../lib/ui';
+import type { Doctor, Patient, Prescription } from '../../types';
+
+export default function DoctorPrescriptions() {
+  const { profile } = useAuth();
+  const [doctor, setDoctor] = useState<Doctor | null>(null);
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
+  const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [medication, setMedication] = useState('');
+  const [dosage, setDosage] = useState('');
+  const [instructions, setInstructions] = useState('');
+
+  useEffect(() => {
+    if (!profile) return;
+    (async () => {
+      const doc = await fetchDoctorByUser(profile.id);
+      setDoctor(doc);
+      setPatients(await fetchPatients());
+      setLoading(false);
+    })();
+  }, [profile]);
+
+  const selectPatient = async (p: Patient) => {
+    setSelectedPatient(p);
+    setPrescriptions(await fetchPrescriptionsByPatient(p.id));
+  };
+
+  const filteredPatients = patients.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()));
+
+  const addPrescription = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!doctor || !selectedPatient || !medication.trim()) return;
+    await supabase.from('prescriptions').insert({
+      patient_id: selectedPatient.id,
+      doctor_id: doctor.id,
+      medication,
+      dosage: dosage || null,
+      instructions: instructions || null,
+    });
+    setMedication(''); setDosage(''); setInstructions('');
+    setShowForm(false);
+    setPrescriptions(await fetchPrescriptionsByPatient(selectedPatient.id));
+  };
+
+  const deletePrescription = async (id: string) => {
+    if (!confirm('¿Eliminar esta prescripción?')) return;
+    await supabase.from('prescriptions').delete().eq('id', id);
+    if (selectedPatient) setPrescriptions(await fetchPrescriptionsByPatient(selectedPatient.id));
+  };
+
+  if (loading) return <div className="flex justify-center py-20"><Spinner /></div>;
+
+  return (
+    <div className="space-y-5 animate-fade-in">
+      <div>
+        <h1 className="text-2xl font-bold text-slate-900">Prescripciones</h1>
+        <p className="text-slate-500 mt-1">Crea y gestiona recetas médicas</p>
+      </div>
+
+      <div className="grid lg:grid-cols-3 gap-5">
+        <div className="card p-4 lg:col-span-1">
+          <div className="relative mb-3">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input className="input pl-9" placeholder="Buscar paciente..." value={search} onChange={(e) => setSearch(e.target.value)} />
+          </div>
+          <div className="space-y-1 max-h-[500px] overflow-y-auto">
+            {filteredPatients.map((p) => (
+              <button key={p.id} onClick={() => selectPatient(p)}
+                className={`w-full text-left p-3 rounded-lg transition flex items-center gap-3 ${selectedPatient?.id === p.id ? 'bg-blue-50' : 'hover:bg-slate-50'}`}>
+                <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0">
+                  <span className="text-xs font-bold text-slate-500">{p.name.charAt(0).toUpperCase()}</span>
+                </div>
+                <span className="font-medium text-sm truncate">{p.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="lg:col-span-2">
+          {!selectedPatient ? (
+            <EmptyState icon={Pill} message="Selecciona un paciente para ver sus prescripciones" />
+          ) : (
+            <div className="card p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-semibold text-slate-900">{selectedPatient.name}</h2>
+                <button className="btn-primary" onClick={() => setShowForm(true)}><Plus className="w-4 h-4" /> Nueva receta</button>
+              </div>
+              {prescriptions.length === 0 ? (
+                <p className="text-center text-slate-400 py-8 text-sm">No hay prescripciones</p>
+              ) : (
+                <div className="space-y-3">
+                  {prescriptions.map((p) => (
+                    <div key={p.id} className="border border-slate-100 rounded-lg p-4 group">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-start gap-3">
+                          <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                            <Pill className="w-4 h-4 text-blue-600" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-slate-900">{p.medication}</p>
+                            {p.dosage && <p className="text-sm text-slate-600">{p.dosage}</p>}
+                            {p.instructions && <p className="text-sm text-slate-500 mt-1">{p.instructions}</p>}
+                            <p className="text-xs text-slate-400 mt-1">{formatDate(p.created_at)}</p>
+                          </div>
+                        </div>
+                        <button onClick={() => deletePrescription(p.id)} className="opacity-0 group-hover:opacity-100 p-1 rounded text-slate-400 hover:text-red-600 transition">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {showForm && selectedPatient && (
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg">
+            <div className="flex items-center justify-between p-5 border-b border-slate-200">
+              <h2 className="text-lg font-semibold text-slate-900">Nueva prescripción</h2>
+              <button onClick={() => setShowForm(false)} className="p-1.5 rounded-lg hover:bg-slate-100"><X className="w-5 h-5 text-slate-500" /></button>
+            </div>
+            <form onSubmit={addPrescription} className="p-5 space-y-4">
+              <div><label className="label">Paciente</label><p className="text-sm font-medium text-slate-700">{selectedPatient.name}</p></div>
+              <div><label className="label">Medicamento *</label><input className="input" required value={medication} onChange={(e) => setMedication(e.target.value)} placeholder="Nombre del medicamento" /></div>
+              <div><label className="label">Dosis</label><input className="input" value={dosage} onChange={(e) => setDosage(e.target.value)} placeholder="Ej: 500mg cada 8 horas" /></div>
+              <div><label className="label">Instrucciones</label><textarea className="input min-h-[80px] resize-y" value={instructions} onChange={(e) => setInstructions(e.target.value)} placeholder="Indicaciones para el paciente" /></div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>Cancelar</button>
+                <button type="submit" className="btn-primary">Guardar receta</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

@@ -1,62 +1,60 @@
-import { Routes, Route, NavLink } from 'react-router-dom';
-import { CalendarDays, Activity } from 'lucide-react';
-import AppointmentsPage from './pages/AppointmentsPage';
-import DoctorsPage from './pages/DoctorsPage';
-import DashboardPage from './pages/DashboardPage';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './lib/auth';
+import ProtectedRoute from './components/ProtectedRoute';
+import Layout from './components/Layout';
+import AuthPage from './pages/AuthPage';
+
+import DoctorDashboard from './pages/doctor/DoctorDashboard';
+import DoctorAgenda from './pages/doctor/DoctorAgenda';
+import DoctorPatients from './pages/doctor/DoctorPatients';
+import DoctorRecords from './pages/doctor/DoctorRecords';
+import DoctorPrescriptions from './pages/doctor/DoctorPrescriptions';
+import DoctorFinancial from './pages/doctor/DoctorFinancial';
+import DoctorProfile from './pages/doctor/DoctorProfile';
+import MessagesPage from './pages/shared/MessagesPage';
+
+import SecretaryDashboard from './pages/secretary/SecretaryDashboard';
+import SecretaryAgenda from './pages/secretary/SecretaryAgenda';
+import SecretaryPatients from './pages/secretary/SecretaryPatients';
+import SecretaryInvoices from './pages/secretary/SecretaryInvoices';
+
+import PatientDashboard from './pages/patient/PatientDashboard';
+import PatientAppointments from './pages/patient/PatientAppointments';
+import { PatientRecords, PatientPrescriptions, PatientInvoices } from './pages/patient/PatientPages';
 
 export default function App() {
-  const navItems = [
-    { to: '/', label: 'Dashboard', icon: Activity, end: true },
-    { to: '/appointments', label: 'Citas', icon: CalendarDays },
-    { to: '/doctors', label: 'Doctores', icon: Stethoscope },
-  ];
-
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
-          <div className="flex items-center">
-            <img
-              src="/grabado_en_logo_DOCAIDE_sin_transparencia.png"
-              alt="DocAide"
-              className="h-10 w-auto"
-            />
-          </div>
-          <nav className="flex items-center gap-1">
-            {navItems.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                className={({ isActive }) =>
-                  `flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-slate-600 hover:bg-slate-100'
-                  }`
-                }
-              >
-                <item.icon className="w-4 h-4" />
-                <span className="hidden sm:inline">{item.label}</span>
-              </NavLink>
-            ))}
-          </nav>
-        </div>
-      </header>
+    <AuthProvider>
+      <Routes>
+        <Route path="/login" element={<AuthPage />} />
 
-      <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 py-6">
-        <Routes>
-          <Route path="/" element={<DashboardPage />} />
-          <Route path="/appointments" element={<AppointmentsPage />} />
-          <Route path="/doctors" element={<DoctorsPage />} />
-        </Routes>
-      </main>
+        {/* Doctor routes */}
+        <Route path="/doctor" element={<ProtectedRoute roles={['doctor']}><Layout><DoctorDashboard /></Layout></ProtectedRoute>} />
+        <Route path="/doctor/agenda" element={<ProtectedRoute roles={['doctor']}><Layout><DoctorAgenda /></Layout></ProtectedRoute>} />
+        <Route path="/doctor/patients" element={<ProtectedRoute roles={['doctor']}><Layout><DoctorPatients /></Layout></ProtectedRoute>} />
+        <Route path="/doctor/records" element={<ProtectedRoute roles={['doctor']}><Layout><DoctorRecords /></Layout></ProtectedRoute>} />
+        <Route path="/doctor/prescriptions" element={<ProtectedRoute roles={['doctor']}><Layout><DoctorPrescriptions /></Layout></ProtectedRoute>} />
+        <Route path="/doctor/financial" element={<ProtectedRoute roles={['doctor']}><Layout><DoctorFinancial /></Layout></ProtectedRoute>} />
+        <Route path="/doctor/profile" element={<ProtectedRoute roles={['doctor']}><Layout><DoctorProfile /></Layout></ProtectedRoute>} />
+        <Route path="/doctor/messages" element={<ProtectedRoute roles={['doctor']}><Layout><MessagesPage /></Layout></ProtectedRoute>} />
 
-      <footer className="border-t border-slate-200 bg-white">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 text-center text-sm text-slate-500">
-          DocAide — Gestión de citas médicas
-        </div>
-      </footer>
-    </div>
+        {/* Secretary routes */}
+        <Route path="/secretary" element={<ProtectedRoute roles={['secretary']}><Layout><SecretaryDashboard /></Layout></ProtectedRoute>} />
+        <Route path="/secretary/agenda" element={<ProtectedRoute roles={['secretary']}><Layout><SecretaryAgenda /></Layout></ProtectedRoute>} />
+        <Route path="/secretary/patients" element={<ProtectedRoute roles={['secretary']}><Layout><SecretaryPatients /></Layout></ProtectedRoute>} />
+        <Route path="/secretary/invoices" element={<ProtectedRoute roles={['secretary']}><Layout><SecretaryInvoices /></Layout></ProtectedRoute>} />
+        <Route path="/secretary/messages" element={<ProtectedRoute roles={['secretary']}><Layout><MessagesPage /></Layout></ProtectedRoute>} />
+
+        {/* Patient routes */}
+        <Route path="/patient" element={<ProtectedRoute roles={['patient']}><Layout><PatientDashboard /></Layout></ProtectedRoute>} />
+        <Route path="/patient/appointments" element={<ProtectedRoute roles={['patient']}><Layout><PatientAppointments /></Layout></ProtectedRoute>} />
+        <Route path="/patient/records" element={<ProtectedRoute roles={['patient']}><Layout><PatientRecords /></Layout></ProtectedRoute>} />
+        <Route path="/patient/prescriptions" element={<ProtectedRoute roles={['patient']}><Layout><PatientPrescriptions /></Layout></ProtectedRoute>} />
+        <Route path="/patient/invoices" element={<ProtectedRoute roles={['patient']}><Layout><PatientInvoices /></Layout></ProtectedRoute>} />
+        <Route path="/patient/messages" element={<ProtectedRoute roles={['patient']}><Layout><MessagesPage /></Layout></ProtectedRoute>} />
+
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    </AuthProvider>
   );
 }
