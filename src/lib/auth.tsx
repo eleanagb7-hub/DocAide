@@ -7,12 +7,22 @@ interface AuthContextValue {
   session: Session | null;
   profile: Profile | null;
   loading: boolean;
-  signUp: (email: string, password: string, name: string, role: UserRole) => Promise<{ error: string | null }>;
+  signUp: (email: string, password: string, name: string, role: UserRole) => Promise<{ error: string | null; needsLogin: boolean }>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{ error: string | null }>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+
+async function fetchProfileWithRetry(userId: string, attempts = 5): Promise<Profile | null> {
+  for (let i = 0; i < attempts; i++) {
+    const { data } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
+    if (data) return data as Profile;
+    await new Promise((r) => setTimeout(r, 300));
+  }
+  return null;
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
@@ -39,10 +49,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!session) return;
     let cancelled = false;
+    setLoading(true);
     (async () => {
-      const { data } = await supabase.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
+      const p = await fetchProfileWithRetry(session.user.id);
       if (!cancelled) {
-        setProfile(data as Profile | null);
+        setProfile(p);
         setLoading(false);
       }
     })();
@@ -55,11 +66,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password,
       options: { data: { name, role } },
     });
-    if (error) return { error: error.message };
-    if (data.user) {
+    if (error) return { error: error.message, needsLogin: false };
+
+    if (data.session) {
+      const p = await fetchProfileWithRetry(data.user!.id);
+      setProfile(p);
       setSession(data.session);
+      return { error: null, needsLogin: false };
     }
-    return { error: null };
+
+    return { error: null, needsLogin: true };
   };
 
   const signIn = async (email: string, password: string) => {
@@ -75,8 +91,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(null);
   };
 
+  const resetPassword = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    if (error) return { error: error.message };
+    return { error: null };
+  };
+
   return (
-    <AuthContext.Provider value={{ session, profile, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ session, profile, loading, signUp, signIn, signOut, resetPassword }}>
       {children}
     </AuthContext.Provider>
   );
