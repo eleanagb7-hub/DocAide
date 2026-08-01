@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Send, MessageSquare, Search } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
 import { supabase } from '../../lib/supabase';
-import { fetchProfiles } from '../../lib/queries';
+import { fetchProfiles, fetchMessages } from '../../lib/queries';
 import { Spinner, EmptyState, formatDate } from '../../lib/ui';
 import type { Profile, Message } from '../../types';
 
