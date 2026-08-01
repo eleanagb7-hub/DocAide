@@ -51,7 +51,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     setLoading(true);
     (async () => {
-      const p = await fetchProfileWithRetry(session.user.id);
+      let p = await fetchProfileWithRetry(session.user.id);
+
+      // Fallback: if profile row doesn't exist yet (trigger delay), build one
+      // from the auth metadata so the user can still navigate.
+      if (!p) {
+        const meta = session.user.user_metadata;
+        p = {
+          id: session.user.id,
+          name: meta?.name ?? 'Usuario',
+          role: (meta?.role as UserRole) ?? 'patient',
+          phone: null,
+          avatar_url: null,
+          created_at: new Date().toISOString(),
+        };
+      }
+
       if (!cancelled) {
         setProfile(p);
         setLoading(false);
