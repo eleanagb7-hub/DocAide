@@ -90,7 +90,7 @@ export default function AuthPage() {
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-50 to-blue-50">
       <div className="w-full max-w-md">
         <div className="text-center mb-6">
-          <img src="/grabado_en_logo_DOCAIDE_sin_transparencia.png" alt="DocAide" className="h-14 mx-auto mb-3" />
+          <img src="/grabado_en_logo_DOCAIDE_sin_transparencia.png" alt="DocAide" className="h-28 mx-auto mb-3" style={{mixBlendMode:'multiply'}} />
           <p className="text-slate-500 text-sm">{t('app.tagline')}</p>
         </div>
 

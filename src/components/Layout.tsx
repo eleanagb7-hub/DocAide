@@ -76,7 +76,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       {/* Mobile header */}
       <header className="md:hidden bg-white border-b border-slate-200 sticky top-0 z-30 flex items-center justify-between h-16 px-4">
         <div className="flex items-center gap-2">
-          <img src="/grabado_en_logo_DOCAIDE_sin_transparencia.png" alt="DocAide" className="h-8 w-auto" />
+          <img src="/grabado_en_logo_DOCAIDE_sin_transparencia.png" alt="DocAide" className="h-10 w-auto" style={{mixBlendMode:'multiply'}} />
         </div>
         <div className="flex items-center gap-2">
           <LanguageCurrencyPicker
@@ -97,7 +97,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         } md:block md:w-64 md:flex-shrink-0 bg-white border-r border-slate-200 md:fixed md:top-0 md:bottom-0 md:left-0 z-20`}
       >
         <div className="hidden md:flex items-center h-16 px-5 border-b border-slate-200">
-          <img src="/grabado_en_logo_DOCAIDE_sin_transparencia.png" alt="DocAide" className="h-9 w-auto" />
+          <img src="/grabado_en_logo_DOCAIDE_sin_transparencia.png" alt="DocAide" className="h-14 w-auto" style={{mixBlendMode:'multiply'}} />
         </div>
         <div className="p-4 border-b border-slate-100">
           <div className="flex items-center gap-3">
