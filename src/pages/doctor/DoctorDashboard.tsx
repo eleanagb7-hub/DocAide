@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CalendarDays, Users, DollarSign, Clock, TrendingUp, CircleAlert as AlertCircle } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
+import { useSettings } from '../../lib/settings';
 import { fetchDoctorByUser, fetchAppointmentsByDoctor, fetchPatients, fetchInvoicesByDoctor } from '../../lib/queries';
 import { StatusBadge, formatDate, Spinner, EmptyState } from '../../lib/ui';
 import type { Doctor, AppointmentWithDetails, Patient, InvoiceWithDetails } from '../../types';
 
 export default function DoctorDashboard() {
   const { profile } = useAuth();
+  const { t, formatCurrency } = useSettings();
   const [doctor, setDoctor] = useState<Doctor | null>(null);
   const [appointments, setAppointments] = useState<AppointmentWithDetails[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -37,9 +39,9 @@ export default function DoctorDashboard() {
   if (!doctor) {
     return (
       <div className="card p-6">
-        <h2 className="font-semibold text-slate-900 mb-2">Completa tu perfil de doctor</h2>
-        <p className="text-slate-500 text-sm mb-4">Necesitas registrar tu especialidad para empezar a usar DocAide.</p>
-        <Link to="/doctor/profile" className="btn-primary">Configurar perfil</Link>
+        <h2 className="font-semibold text-slate-900 mb-2">{t('dash.noProfile')}</h2>
+        <p className="text-slate-500 text-sm mb-4">{t('dash.noProfileDesc')}</p>
+        <Link to="/doctor/profile" className="btn-primary">{t('dash.configureProfile')}</Link>
       </div>
     );
   }
@@ -56,16 +58,16 @@ export default function DoctorDashboard() {
   const overdueCount = invoices.filter((i) => i.status === 'overdue').length;
 
   const stats = [
-    { label: 'Citas hoy', value: today.length, icon: Clock, color: 'text-blue-600 bg-blue-50' },
-    { label: 'Próximas citas', value: upcoming.length, icon: CalendarDays, color: 'text-emerald-600 bg-emerald-50' },
-    { label: 'Pacientes', value: patients.length, icon: Users, color: 'text-purple-600 bg-purple-50' },
-    { label: 'Ingresos totales', value: `$${totalIncome.toFixed(2)}`, icon: DollarSign, color: 'text-green-600 bg-green-50' },
+    { label: t('dash.appointmentsToday'), value: today.length, icon: Clock, color: 'text-blue-600 bg-blue-50' },
+    { label: t('dash.upcoming'), value: upcoming.length, icon: CalendarDays, color: 'text-emerald-600 bg-emerald-50' },
+    { label: t('dash.patients'), value: patients.length, icon: Users, color: 'text-purple-600 bg-purple-50' },
+    { label: t('dash.totalIncome'), value: formatCurrency(totalIncome), icon: DollarSign, color: 'text-green-600 bg-green-50' },
   ];
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Bienvenido, Dr. {profile?.name}</h1>
+        <h1 className="text-2xl font-bold text-slate-900">{t('dash.welcomeDoctor')} {profile?.name}</h1>
         <p className="text-slate-500 mt-1">{doctor.specialty}</p>
       </div>
 
@@ -85,31 +87,31 @@ export default function DoctorDashboard() {
         <div className="card p-4 flex items-center gap-3 border-amber-200 bg-amber-50">
           <TrendingUp className="w-5 h-5 text-amber-600" />
           <p className="text-sm text-amber-800">
-            <strong>${pendingIncome.toFixed(2)}</strong> en facturas pendientes
-            {overdueCount > 0 && ` · ${overdueCount} vencida${overdueCount > 1 ? 's' : ''}`}
+            <strong>{formatCurrency(pendingIncome)}</strong> {t('dash.pendingInvoices')}
+            {overdueCount > 0 && ` · ${overdueCount} ${overdueCount > 1 ? t('dash.overduePlural') : t('dash.overdue')}`}
           </p>
         </div>
       )}
 
       <div className="card p-5">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-semibold text-slate-900">Citas de hoy</h2>
-          <Link to="/doctor/agenda" className="text-sm text-blue-600 hover:text-blue-700 font-medium">Ver agenda</Link>
+          <h2 className="font-semibold text-slate-900">{t('dash.todayAppointments')}</h2>
+          <Link to="/doctor/agenda" className="text-sm text-blue-600 hover:text-blue-700 font-medium">{t('dash.viewAgenda')}</Link>
         </div>
         {today.length === 0 ? (
-          <EmptyState icon={CalendarDays} message="No tienes citas hoy" />
+          <EmptyState icon={CalendarDays} message={t('dash.noAppointmentsToday')} />
         ) : (
           <div className="space-y-3">
             {today.map((apt) => (
               <div key={apt.id} className="flex items-center gap-3 p-3 rounded-lg border border-slate-100">
                 <div className="w-12 h-12 rounded-lg bg-blue-50 flex flex-col items-center justify-center flex-shrink-0">
                   <span className="text-xs font-bold text-blue-600">
-                    {new Date(apt.scheduled_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                    {new Date(apt.scheduled_at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="font-medium text-slate-900 truncate">{apt.patient?.name}</p>
-                  <p className="text-sm text-slate-500">{apt.reason || 'Consulta'}</p>
+                  <p className="text-sm text-slate-500">{apt.reason || t('agenda.reasonPlaceholder')}</p>
                 </div>
                 <StatusBadge status={apt.status} type="appointment" />
               </div>
@@ -119,19 +121,19 @@ export default function DoctorDashboard() {
       </div>
 
       <div className="card p-5">
-        <h2 className="font-semibold text-slate-900 mb-4">Resumen de actividad</h2>
+        <h2 className="font-semibold text-slate-900 mb-4">{t('dash.activitySummary')}</h2>
         <div className="grid sm:grid-cols-3 gap-4">
           <div className="text-center p-4 rounded-lg bg-slate-50">
             <p className="text-2xl font-bold text-slate-900">{completedCount}</p>
-            <p className="text-sm text-slate-500">Consultas completadas</p>
+            <p className="text-sm text-slate-500">{t('dash.completed')}</p>
           </div>
           <div className="text-center p-4 rounded-lg bg-slate-50">
             <p className="text-2xl font-bold text-slate-900">{appointments.filter((a) => a.status === 'cancelled').length}</p>
-            <p className="text-sm text-slate-500">Canceladas</p>
+            <p className="text-sm text-slate-500">{t('dash.cancelled')}</p>
           </div>
           <div className="text-center p-4 rounded-lg bg-slate-50">
             <p className="text-2xl font-bold text-slate-900">{appointments.filter((a) => a.status === 'no_show').length}</p>
-            <p className="text-sm text-slate-500">Inasistencias</p>
+            <p className="text-sm text-slate-500">{t('dash.noShows')}</p>
           </div>
         </div>
       </div>

@@ -1,19 +1,21 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { Send, MessageSquare, Search, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
+import { useSettings } from '../../lib/settings';
 import { supabase } from '../../lib/supabase';
 import { fetchProfiles, fetchMessages } from '../../lib/queries';
 import { Spinner, formatDate } from '../../lib/ui';
 import type { Profile, Message, UserRole } from '../../types';
 
-const ROLE_LABELS: Record<UserRole, string> = {
-  doctor: 'Doctor',
-  secretary: 'Secretaria',
-  patient: 'Paciente',
+const ROLE_LABEL_KEYS: Record<UserRole, string> = {
+  doctor: 'role.doctor',
+  secretary: 'role.secretary',
+  patient: 'role.patient',
 };
 
 export default function MessagesPage() {
   const { profile } = useAuth();
+  const { t } = useSettings();
   const [contacts, setContacts] = useState<Profile[]>([]);
   const [selectedContact, setSelectedContact] = useState<Profile | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -67,25 +69,25 @@ export default function MessagesPage() {
   return (
     <div className="space-y-5 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Mensajes</h1>
-        <p className="text-slate-500 mt-1">Comunicación segura con tus contactos</p>
+        <h1 className="text-2xl font-bold text-slate-900">{t('messages.title')}</h1>
+        <p className="text-slate-500 mt-1">{t('messages.subtitle')}</p>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-0 lg:gap-5 h-[600px] lg:h-[550px]">
         {/* Contact list */}
         <div className={`card p-0 lg:p-4 lg:col-span-1 flex flex-col overflow-hidden ${mobileView === 'chat' ? 'hidden lg:flex' : 'flex'}`}>
           <div className="p-4 lg:p-0 lg:mb-3 border-b lg:border-0 border-slate-100">
-            <h2 className="font-semibold text-slate-900 text-sm mb-2 lg:hidden">Contactos</h2>
+            <h2 className="font-semibold text-slate-900 text-sm mb-2 lg:hidden">{t('messages.contacts')}</h2>
             <div className="relative">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input className="input pl-9" placeholder="Buscar contacto..." value={search} onChange={(e) => setSearch(e.target.value)} />
+              <input className="input pl-9" placeholder={t('messages.searchContact')} value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
           </div>
           <div className="space-y-1 flex-1 overflow-y-auto px-2 lg:px-0 pb-2">
             {filteredContacts.length === 0 ? (
               <div className="text-center py-10 px-4">
                 <MessageSquare className="w-10 h-10 mx-auto text-slate-300 mb-2" />
-                <p className="text-sm text-slate-400">No hay contactos disponibles</p>
+                <p className="text-sm text-slate-400">{t('messages.noContacts')}</p>
               </div>
             ) : (
               filteredContacts.map((c) => {
@@ -104,7 +106,7 @@ export default function MessagesPage() {
                     <div className="min-w-0 flex-1">
                       <p className="font-medium text-sm truncate text-slate-900">{c.name}</p>
                       <p className="text-xs text-slate-400 truncate">
-                        {lastMsg ? lastMsg.body : ROLE_LABELS[c.role]}
+                        {lastMsg ? lastMsg.body : t(ROLE_LABEL_KEYS[c.role])}
                       </p>
                     </div>
                   </button>
@@ -120,8 +122,8 @@ export default function MessagesPage() {
             <div className="flex-1 flex items-center justify-center p-8">
               <div className="text-center">
                 <MessageSquare className="w-14 h-14 mx-auto text-slate-200 mb-4" />
-                <p className="text-slate-400 font-medium">Selecciona un contacto para empezar a chatear</p>
-                <p className="text-slate-300 text-sm mt-1">Elige una persona de la lista de contactos</p>
+                <p className="text-slate-400 font-medium">{t('messages.selectContact')}</p>
+                <p className="text-slate-300 text-sm mt-1">{t('messages.selectContactDesc')}</p>
               </div>
             </div>
           ) : (
@@ -135,16 +137,16 @@ export default function MessagesPage() {
                 </div>
                 <div>
                   <p className="font-semibold text-slate-900">{selectedContact.name}</p>
-                  <p className="text-xs text-slate-400">{ROLE_LABELS[selectedContact.role]}</p>
+                  <p className="text-xs text-slate-400">{t(ROLE_LABEL_KEYS[selectedContact.role])}</p>
                 </div>
               </div>
               <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/50">
                 {messages.length === 0 ? (
                   <div className="flex items-center justify-center h-full">
                     <p className="text-center text-slate-400 text-sm py-8">
-                      No hay mensajes todavía.
+                      {t('messages.noMessagesYet')}
                       <br />
-                      Escribe el primer mensaje abajo.
+                      {t('messages.writeFirst')}
                     </p>
                   </div>
                 ) : (
@@ -163,10 +165,10 @@ export default function MessagesPage() {
                 <div ref={messagesEndRef} />
               </div>
               <form onSubmit={send} className="p-3 border-t border-slate-100 flex gap-2 bg-white">
-                <input className="input flex-1" value={body} onChange={(e) => setBody(e.target.value)} placeholder={`Escribe un mensaje a ${selectedContact.name}...`} />
+                <input className="input flex-1" value={body} onChange={(e) => setBody(e.target.value)} placeholder={`${t('messages.writeTo')} ${selectedContact.name}...`} />
                 <button type="submit" className="btn-primary px-4 flex items-center gap-2">
                   <Send className="w-4 h-4" />
-                  <span className="hidden sm:inline">Enviar</span>
+                  <span className="hidden sm:inline">{t('messages.send')}</span>
                 </button>
               </form>
             </>

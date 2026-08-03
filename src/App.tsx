@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './lib/auth';
+import { SettingsProvider } from './lib/settings';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import AuthPage from './pages/AuthPage';
@@ -25,7 +26,8 @@ import { PatientRecords, PatientPrescriptions, PatientInvoices } from './pages/p
 export default function App() {
   return (
     <AuthProvider>
-      <Routes>
+      <SettingsProvider>
+        <Routes>
         <Route path="/login" element={<AuthPage />} />
 
         {/* Doctor routes */}
@@ -54,7 +56,8 @@ export default function App() {
         <Route path="/patient/messages" element={<ProtectedRoute roles={['patient']}><Layout><MessagesPage /></Layout></ProtectedRoute>} />
 
         <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
+        </Routes>
+      </SettingsProvider>
     </AuthProvider>
   );
 }

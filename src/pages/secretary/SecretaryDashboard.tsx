@@ -1,23 +1,21 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { CalendarDays, Users, Receipt, Clock, TrendingUp } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
-import { Spinner, EmptyState, StatusBadge, formatDate } from '../../lib/ui';
-import type { AppointmentWithDetails, InvoiceWithDetails } from '../../types';
+import { CalendarDays, Users, Receipt, Clock } from 'lucide-react';
+import { useSettings } from '../../lib/settings';
+import { fetchAllAppointments, fetchPatients, fetchAllInvoices } from '../../lib/queries';
+import { StatusBadge, formatDate, Spinner, EmptyState } from '../../lib/ui';
+import type { AppointmentWithDetails, Patient, InvoiceWithDetails } from '../../types';
 
 export default function SecretaryDashboard() {
+  const { t, formatCurrency } = useSettings();
   const [appointments, setAppointments] = useState<AppointmentWithDetails[]>([]);
+  const [patients, setPatients] = useState<Patient[]>([]);
   const [invoices, setInvoices] = useState<InvoiceWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
-      const [apptRes, invRes] = await Promise.all([
-        supabase.from('appointments').select('*, doctor:doctors(*), patient:patients(*)').order('scheduled_at', { ascending: true }),
-        supabase.from('invoices').select('*, patient:patients(id, name)').order('created_at', { ascending: false }),
-      ]);
-      setAppointments(apptRes.data as unknown as AppointmentWithDetails[]);
-      setInvoices(invRes.data as unknown as InvoiceWithDetails[]);
+      const [appts, pats, invs] = await Promise.all([fetchAllAppointments(), fetchPatients(), fetchAllInvoices()]);
+      setAppointments(appts); setPatients(pats); setInvoices(invs);
       setLoading(false);
     })();
   }, []);
@@ -25,23 +23,24 @@ export default function SecretaryDashboard() {
   if (loading) return <div className="flex justify-center py-20"><Spinner /></div>;
 
   const now = new Date();
-  const today = appointments.filter((a) => new Date(a.scheduled_at).toDateString() === now.toDateString() && a.status !== 'cancelled');
-  const upcoming = appointments.filter((a) => new Date(a.scheduled_at) >= now && a.status !== 'cancelled');
-  const pendingInv = invoices.filter((i) => i.status === 'pending');
-  const overdueInv = invoices.filter((i) => i.status === 'overdue');
+  const today = appointments.filter((a) => {
+    const d = new Date(a.scheduled_at);
+    return d.toDateString() === now.toDateString() && a.status !== 'cancelled';
+  });
+  const pendingInvoices = invoices.filter((i) => i.status !== 'paid').length;
+  const paidInvoices = invoices.filter((i) => i.status === 'paid').length;
 
   const stats = [
-    { label: 'Citas hoy', value: today.length, icon: Clock, color: 'text-blue-600 bg-blue-50' },
-    { label: 'Próximas', value: upcoming.length, icon: CalendarDays, color: 'text-emerald-600 bg-emerald-50' },
-    { label: 'Facturas pendientes', value: pendingInv.length, icon: Receipt, color: 'text-amber-600 bg-amber-50' },
-    { label: 'Facturas vencidas', value: overdueInv.length, icon: TrendingUp, color: 'text-red-600 bg-red-50' },
+    { label: t('secretary.todayAppointments'), value: today.length, icon: Clock, color: 'text-blue-600 bg-blue-50' },
+    { label: t('secretary.totalPatients'), value: patients.length, icon: Users, color: 'text-purple-600 bg-purple-50' },
+    { label: t('secretary.pendingInvoices'), value: pendingInvoices, icon: Receipt, color: 'text-amber-600 bg-amber-50' },
+    { label: t('secretary.paidInvoices'), value: paidInvoices, icon: Receipt, color: 'text-green-600 bg-green-50' },
   ];
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Panel de recepción</h1>
-        <p className="text-slate-500 mt-1">Gestión de agenda y administración</p>
+        <h1 className="text-2xl font-bold text-slate-900">{t('secretary.dashTitle')}</h1>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -57,24 +56,44 @@ export default function SecretaryDashboard() {
       </div>
 
       <div className="card p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-semibold text-slate-900">Citas de hoy</h2>
-          <Link to="/secretary/agenda" className="text-sm text-blue-600 hover:text-blue-700 font-medium">Ver agenda</Link>
-        </div>
+        <h2 className="font-semibold text-slate-900 mb-4">{t('secretary.todayAppointments')}</h2>
         {today.length === 0 ? (
-          <EmptyState icon={CalendarDays} message="No hay citas hoy" />
+          <EmptyState icon={CalendarDays} message={t('secretary.noAppointmentsToday')} />
         ) : (
           <div className="space-y-3">
             {today.map((apt) => (
               <div key={apt.id} className="flex items-center gap-3 p-3 rounded-lg border border-slate-100">
-                <div className="w-12 h-12 rounded-lg bg-blue-50 flex flex-col items-center justify-center flex-shrink-0">
-                  <span className="text-xs font-bold text-blue-600">{new Date(apt.scheduled_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
+                <div className="w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                  <span className="text-xs font-bold text-blue-600">
+                    {new Date(apt.scheduled_at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
+                  </span>
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="font-medium text-slate-900 truncate">{apt.patient?.name}</p>
-                  <p className="text-sm text-slate-500">{apt.doctor?.specialty ?? 'Doctor'}</p>
+                  <p className="text-sm text-slate-500">{apt.doctor?.specialty}</p>
                 </div>
                 <StatusBadge status={apt.status} type="appointment" />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="card p-5">
+        <h2 className="font-semibold text-slate-900 mb-4">{t('secretary.recentPatients')}</h2>
+        {patients.length === 0 ? (
+          <EmptyState icon={Users} message={t('secretary.noPatients')} />
+        ) : (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {patients.slice(0, 6).map((p) => (
+              <div key={p.id} className="flex items-center gap-3 p-3 rounded-lg border border-slate-100">
+                <div className="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center">
+                  <span className="text-xs font-bold text-blue-600">{p.name.charAt(0).toUpperCase()}</span>
+                </div>
+                <div className="min-w-0">
+                  <p className="font-medium text-sm text-slate-900 truncate">{p.name}</p>
+                  <p className="text-xs text-slate-400">{p.phone ?? ''}</p>
+                </div>
               </div>
             ))}
           </div>

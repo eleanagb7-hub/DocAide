@@ -1,12 +1,5 @@
+import { useSettings } from './settings';
 import type { AppointmentStatus, InvoiceStatus } from '../types';
-
-export const APPOINTMENT_STATUS_LABELS: Record<string, string> = {
-  pending: 'Pendiente',
-  confirmed: 'Confirmada',
-  completed: 'Completada',
-  cancelled: 'Cancelada',
-  no_show: 'No asistió',
-};
 
 export const APPOINTMENT_STATUS_COLORS: Record<string, string> = {
   pending: 'bg-amber-50 text-amber-700',
@@ -16,12 +9,6 @@ export const APPOINTMENT_STATUS_COLORS: Record<string, string> = {
   no_show: 'bg-slate-100 text-slate-600',
 };
 
-export const INVOICE_STATUS_LABELS: Record<string, string> = {
-  pending: 'Pendiente',
-  paid: 'Pagada',
-  overdue: 'Vencida',
-};
-
 export const INVOICE_STATUS_COLORS: Record<string, string> = {
   pending: 'bg-amber-50 text-amber-700',
   paid: 'bg-green-50 text-green-700',
@@ -29,13 +16,15 @@ export const INVOICE_STATUS_COLORS: Record<string, string> = {
 };
 
 export function StatusBadge({ status, type }: { status: string; type: 'appointment' | 'invoice' }) {
-  const labels = type === 'appointment' ? APPOINTMENT_STATUS_LABELS : INVOICE_STATUS_LABELS;
+  const { t } = useSettings();
   const colors = type === 'appointment' ? APPOINTMENT_STATUS_COLORS : INVOICE_STATUS_COLORS;
-  return <span className={`badge ${colors[status] ?? ''}`}>{labels[status] ?? status}</span>;
+  const labelKey = type === 'appointment' ? `status.${status}` : `status.${status}`;
+  return <span className={`badge ${colors[status] ?? ''}`}>{t(labelKey)}</span>;
 }
 
 export function formatDate(dateStr: string, opts?: Intl.DateTimeFormatOptions) {
-  return new Date(dateStr).toLocaleString('es-ES', opts ?? {
+  const locale = typeof window !== 'undefined' && localStorage.getItem('docaide_language') === 'en' ? 'en-US' : 'es-ES';
+  return new Date(dateStr).toLocaleString(locale, opts ?? {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
@@ -45,7 +34,8 @@ export function formatDate(dateStr: string, opts?: Intl.DateTimeFormatOptions) {
 }
 
 export function formatDateShort(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString('es-ES', {
+  const locale = typeof window !== 'undefined' && localStorage.getItem('docaide_language') === 'en' ? 'en-US' : 'es-ES';
+  return new Date(dateStr).toLocaleDateString(locale, {
     day: 'numeric',
     month: 'short',
     year: 'numeric',

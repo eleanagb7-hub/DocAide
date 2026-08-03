@@ -1,11 +1,7 @@
 import { useEffect, useState } from 'react';
-import {
-  Save, Stethoscope, Users, MessageSquare, Video, Activity,
-  BarChart2, UserPlus, ClipboardList, Share2, FileText, Receipt,
-  TrendingDown, Gift, Calendar, Image, Bell, Palette, RefreshCw,
-  UserCheck, Clock,
-} from 'lucide-react';
+import { Save, Stethoscope, Users, MessageSquare, Video, Activity, ChartBar as BarChart2, UserPlus, ClipboardList, Share2, FileText, Receipt, TrendingDown, Gift, Calendar, Image, Bell, Palette, RefreshCw, UserCheck, Clock } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
+import { useSettings } from '../../lib/settings';
 import { supabase } from '../../lib/supabase';
 import { fetchDoctorByUser } from '../../lib/queries';
 import { Spinner } from '../../lib/ui';
@@ -111,6 +107,7 @@ const FEATURES = [
 
 export default function DoctorProfile() {
   const { profile } = useAuth();
+  const { t, language, formatCurrency } = useSettings();
   const [doctor, setDoctor] = useState<Doctor | null>(null);
   const [specialty, setSpecialty] = useState('');
   const [bio, setBio] = useState('');
@@ -151,8 +148,8 @@ export default function DoctorProfile() {
       {/* Profile form */}
       <div className="max-w-lg space-y-5">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Mi perfil profesional</h1>
-          <p className="text-slate-500 mt-1">Configura tu información de doctor</p>
+          <h1 className="text-2xl font-bold text-slate-900">{t('profile.title')}</h1>
+          <p className="text-slate-500 mt-1">{t('profile.subtitle')}</p>
         </div>
         <form onSubmit={handleSave} className="card p-5 space-y-4">
           <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
@@ -161,22 +158,22 @@ export default function DoctorProfile() {
             </div>
             <div>
               <p className="font-semibold text-slate-900">{profile?.name}</p>
-              <p className="text-sm text-slate-500">Doctor</p>
+              <p className="text-sm text-slate-500">{t('role.doctor')}</p>
             </div>
           </div>
-          <div><label className="label">Especialidad *</label><input className="input" required value={specialty} onChange={(e) => setSpecialty(e.target.value)} placeholder="Ej: Cardiología" /></div>
-          <div><label className="label">Biografía</label><textarea className="input min-h-[100px] resize-y" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Describe tu experiencia y formación" /></div>
-          <div><label className="label">Costo de consulta</label><input type="number" step="0.01" className="input" value={fee} onChange={(e) => setFee(e.target.value)} placeholder="0.00" /></div>
-          {saved && <div className="text-sm text-green-600 bg-green-50 border border-green-200 rounded-lg px-3 py-2">Perfil guardado correctamente</div>}
-          <button type="submit" className="btn-primary" disabled={saving}><Save className="w-4 h-4" /> {saving ? 'Guardando...' : 'Guardar perfil'}</button>
+          <div><label className="label">{t('profile.specialty')} {t('common.required')}</label><input className="input" required value={specialty} onChange={(e) => setSpecialty(e.target.value)} placeholder={t('profile.specialtyPlaceholder')} /></div>
+          <div><label className="label">{t('profile.bio')}</label><textarea className="input min-h-[100px] resize-y" value={bio} onChange={(e) => setBio(e.target.value)} placeholder={t('profile.bioPlaceholder')} /></div>
+          <div><label className="label">{t('profile.fee')}</label><div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">{formatCurrency(0).split(' ')[0]}</span><input type="number" step="0.01" className="input pl-10" value={fee} onChange={(e) => setFee(e.target.value)} placeholder="0.00" /></div></div>
+          {saved && <div className="text-sm text-green-600 bg-green-50 border border-green-200 rounded-lg px-3 py-2">{t('profile.saved')}</div>}
+          <button type="submit" className="btn-primary" disabled={saving}><Save className="w-4 h-4" /> {saving ? t('common.saving') : t('profile.saveProfile')}</button>
         </form>
       </div>
 
       {/* Features section */}
       <div className="space-y-4">
         <div>
-          <h2 className="text-xl font-bold text-slate-900">Funcionalidades disponibles</h2>
-          <p className="text-slate-500 mt-1">Todo lo que puedes hacer con tu cuenta de doctor</p>
+          <h2 className="text-xl font-bold text-slate-900">{t('profile.features')}</h2>
+          <p className="text-slate-500 mt-1">{t('profile.featuresDesc')}</p>
         </div>
         <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {FEATURES.map(({ icon: Icon, title, description }) => (

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ClipboardList, FileText, Pill, Receipt } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
+import { useSettings } from '../../lib/settings';
 import { supabase } from '../../lib/supabase';
 import { fetchPatientByUser } from '../../lib/queries';
 import { Spinner, EmptyState, formatDate, StatusBadge, formatDateShort } from '../../lib/ui';
@@ -8,6 +9,7 @@ import type { Patient, MedicalRecord, Prescription, InvoiceWithDetails } from '.
 
 export function PatientRecords() {
   const { profile } = useAuth();
+  const { t } = useSettings();
   const [records, setRecords] = useState<MedicalRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -28,11 +30,11 @@ export function PatientRecords() {
   return (
     <div className="space-y-5 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Mis resultados y notas</h1>
-        <p className="text-slate-500 mt-1">Historial clínico y evolución</p>
+        <h1 className="text-2xl font-bold text-slate-900">{t('records.patientRecords')}</h1>
+        <p className="text-slate-500 mt-1">{t('records.patientRecordsSubtitle')}</p>
       </div>
       {records.length === 0 ? (
-        <EmptyState icon={ClipboardList} message="No hay registros disponibles" />
+        <EmptyState icon={ClipboardList} message={t('records.noRecordsAvailable')} />
       ) : (
         <div className="space-y-3">
           {records.map((r) => (
@@ -49,6 +51,7 @@ export function PatientRecords() {
 
 export function PatientPrescriptions() {
   const { profile } = useAuth();
+  const { t } = useSettings();
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -69,11 +72,11 @@ export function PatientPrescriptions() {
   return (
     <div className="space-y-5 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Mis recetas</h1>
-        <p className="text-slate-500 mt-1">Prescripciones médicas</p>
+        <h1 className="text-2xl font-bold text-slate-900">{t('prescriptions.myPrescriptions')}</h1>
+        <p className="text-slate-500 mt-1">{t('prescriptions.myPrescriptionsSubtitle')}</p>
       </div>
       {prescriptions.length === 0 ? (
-        <EmptyState icon={Pill} message="No tienes prescripciones" />
+        <EmptyState icon={Pill} message={t('prescriptions.noPrescriptionsYou')} />
       ) : (
         <div className="space-y-3">
           {prescriptions.map((p) => (
@@ -99,6 +102,7 @@ export function PatientPrescriptions() {
 
 export function PatientInvoices() {
   const { profile } = useAuth();
+  const { t, formatCurrency } = useSettings();
   const [invoices, setInvoices] = useState<InvoiceWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -122,31 +126,31 @@ export function PatientInvoices() {
   return (
     <div className="space-y-5 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Mis facturas</h1>
-        <p className="text-slate-500 mt-1">Estado de cuenta y pagos</p>
+        <h1 className="text-2xl font-bold text-slate-900">{t('invoices.myInvoices')}</h1>
+        <p className="text-slate-500 mt-1">{t('invoices.myInvoicesSubtitle')}</p>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="card p-4">
-          <p className="text-xl font-bold text-green-700">${totalPaid.toFixed(2)}</p>
-          <p className="text-sm text-slate-500">Total pagado</p>
+          <p className="text-xl font-bold text-green-700">{formatCurrency(totalPaid)}</p>
+          <p className="text-sm text-slate-500">{t('invoices.totalPaid')}</p>
         </div>
         <div className="card p-4">
-          <p className="text-xl font-bold text-amber-700">${totalPending.toFixed(2)}</p>
-          <p className="text-sm text-slate-500">Pendiente de pago</p>
+          <p className="text-xl font-bold text-amber-700">{formatCurrency(totalPending)}</p>
+          <p className="text-sm text-slate-500">{t('invoices.totalPending')}</p>
         </div>
       </div>
 
       {invoices.length === 0 ? (
-        <EmptyState icon={Receipt} message="No tienes facturas" />
+        <EmptyState icon={Receipt} message={t('invoices.noInvoicesYou')} />
       ) : (
         <div className="space-y-3">
           {invoices.map((inv) => (
             <div key={inv.id} className="card p-4">
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div>
-                  <p className="font-semibold text-slate-900">${Number(inv.amount).toFixed(2)}</p>
-                  <p className="text-xs text-slate-400">{formatDateShort(inv.created_at)}{inv.due_date && ` · Vence: ${formatDateShort(inv.due_date)}`}</p>
+                  <p className="font-semibold text-slate-900">{formatCurrency(Number(inv.amount))}</p>
+                  <p className="text-xs text-slate-400">{formatDateShort(inv.created_at)}{inv.due_date && ` · ${t('invoices.dueDate')}: ${formatDateShort(inv.due_date)}`}</p>
                 </div>
                 <StatusBadge status={inv.status} type="invoice" />
               </div>
