@@ -4,6 +4,7 @@ import { SettingsProvider } from './lib/settings';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import AuthPage from './pages/AuthPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 import DoctorDashboard from './pages/doctor/DoctorDashboard';
 import DoctorAgenda from './pages/doctor/DoctorAgenda';
@@ -29,6 +30,7 @@ export default function App() {
       <SettingsProvider>
         <Routes>
         <Route path="/login" element={<AuthPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         {/* Doctor routes */}
         <Route path="/doctor" element={<ProtectedRoute roles={['doctor']}><Layout><DoctorDashboard /></Layout></ProtectedRoute>} />
